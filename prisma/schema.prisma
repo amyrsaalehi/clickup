@@ -23,14 +23,13 @@ model User {
 }
 
 model Workspace {
-    id         Int      @id @default(autoincrement())
-    createdAt  DateTime @default(now())
-    updatedAt  DateTime @updatedAt
-    title      String // Unique locally
-    tasks      Task[]
-    adminEmail String // Admin's Email
-    user       User?    @relation(fields: [userId], references: [id])
-    userId     Int?
+    id        Int      @id @default(autoincrement())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    title     String // Unique locally
+    tasks     Task[]
+    user      User     @relation(fields: [userId], references: [id])
+    userId    Int
 }
 
 model Task {
@@ -38,10 +37,9 @@ model Task {
     createdAt   DateTime   @default(now())
     updatedAt   DateTime   @updatedAt
     title       String
-    description String
     workspace   Workspace? @relation(fields: [workspaceId], references: [id])
     workspaceId Int?
-    assignee    User       @relation(fields: [assigneeId], references: [id]) // Check User in Workspace
-    assigneeId  Int
-    authorEmail String // Author's Email
+    assignee    User?      @relation(fields: [assigneeId], references: [id]) // Check User in Workspace
+    assigneeId  Int?
+    progress    Int        @default(0)
 }

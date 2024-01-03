@@ -15,3 +15,12 @@ export const UpdateUser = z.object({
   fullName: z.string().min(7),
   token: z.string(),
 });
+
+export const SearchUser = z.object({
+  email: z.string().email()
+})
+
+
+export const UserMe = z.object({
+  token: z.string(),
+})

@@ -11,9 +11,10 @@ import { type CreateNextContextOptions } from "@trpc/server/adapters/next";
 import superjson from "superjson";
 import { ZodError } from "zod";
 import { db } from "~/server/db";
+import { type UserCtx } from "../types";
 
 interface CreateContextOptions {
-  user: any;
+  user: UserCtx;
 }
 
 const createInnerTRPCContext = (_opts: CreateContextOptions) => {
