@@ -18,7 +18,6 @@ const initToast = {
 
 export default function WorkspaceList() {
 	const [form, setForm] = useState(initForm);
-	const [isValid, setIsValid] = useState(false);
 	const [selectedTask, setSelectedTask] = useState({ id: 0, title: '', });
 	const [toast, setToast] = useState<{ type: null | 'ERROR' | 'SUCCESS'; message: string }>(initToast);
 	const me = api.user.me.useQuery({ token: Cookies.get('token')! });
@@ -52,26 +51,28 @@ export default function WorkspaceList() {
 	};
 
 	const handleSubmitInvite = () => {
-		if (!isValid) {
-			setToast({ type: 'ERROR', message: 'User not Found!' });
+		if (!EMAIL_REGEX.test(form.email)) {
+			setToast({ type: 'ERROR', message: 'Email is not Valid!' });
 			setTimeout(() => setToast(initToast), 1000);
 			return;
 		}
-		if (!searchUsers.data?.length) {
-			setToast({ type: 'ERROR', message: 'User not Found!' });
-			setTimeout(() => setToast(initToast), 1000);
-			return;
-		}
-		if (searchUsers.data[0]?.id === me.data?.id) {
-			setToast({ type: 'ERROR', message: 'You Cannot Assign Task to Yourself!' });
-			setTimeout(() => setToast(initToast), 1000);
-			return;
-		}
-		updateTask.mutate({
-			id: selectedTask.id,
-			assigneeId: searchUsers.data[0]!.id
-		})
-		handleCancel();
+		void searchUsers.refetch().then((data) => {
+			if (!data.data?.length) {
+				setToast({ type: 'ERROR', message: 'User not Found!' });
+				setTimeout(() => setToast(initToast), 1000);
+				return;
+			}
+			if (data.data[0]?.id === me.data?.id) {
+				setToast({ type: 'ERROR', message: 'You Cannot Assign Task to Yourself!' });
+				setTimeout(() => setToast(initToast), 1000);
+				return;
+			}
+			updateTask.mutate({
+				id: selectedTask.id,
+				assigneeId: data.data[0]!.id
+			})
+			handleCancel();
+		});
 	};
 
 	const handleSubmitProgress = () => {
@@ -82,17 +83,11 @@ export default function WorkspaceList() {
 		handleCancel();
 	};
 
-	useEffect(() => {
-		if (EMAIL_REGEX.test(form.email)) {
-			setIsValid(true);
-			void searchUsers.refetch();
-		} else {
-			setIsValid(false);
-		}
-	}, [form.email]);
-
 	return workspacesQuery.data?.map((workspace) => {
 		const isMyWorkspace = workspace.userId === me.data?.id;
+		const doIHaveATask = workspace.tasks.some((task) => task.assignee?.id === me.data?.id);
+		const shouldShowToMe = isMyWorkspace || doIHaveATask;
+		if (!shouldShowToMe) return null;
 		return (
 			<>
 				<div key={workspace.id} className="join join-vertical w-full">
@@ -110,14 +105,20 @@ export default function WorkspaceList() {
 							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-center gap-5">
 								{
 									workspace.tasks?.map((task) => {
+										console.log(task.assignee);
 										return (
 											<ul key={task.id} className="list-disc px-4">
 												<li>
 													<div className="flex gap-3 flex-col pb-4 md:pb-0">
 														<div className="flex flex-col gap-2">
-															<div className="flex items-center gap-1">
-																<h4 className="text-xl font-bold">{task.title}</h4>
-																<span className={`text-sm ${task.progress > 75 ? 'text-success' : task.progress < 75 && task.progress >= 50 ? 'text-warning' : 'text-error'}`}>({task.progress}%)</span>
+															<div className="flex flex-col gap-1">
+																<div className="flex gap-1 items-center">
+																	<h4 className="text-xl font-bold">{task.title}</h4>
+																	<span className={`text-sm ${task.progress > 75 ? 'text-success' : task.progress < 75 && task.progress >= 50 ? 'text-warning' : 'text-error'}`}>({task.progress}%)</span>
+																</div>
+																<p className="opacity-65 text-xs">
+																	Lorem ipsum dolor sit amet consectetur adipisicing elit. Aspernatur, maxime officia? Molestiae ab aspernatur odio dicta omnis, consequatur suscipit earum repudiandae, sapiente nulla, tempora fuga provident voluptas iusto quo eos?
+																</p>
 															</div>
 															{
 																!task.assignee?.id && isMyWorkspace ? (
